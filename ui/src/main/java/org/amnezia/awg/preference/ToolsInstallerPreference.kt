@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Preference implementing a button that asynchronously runs `ToolsInstaller` and displays the
+ * Preference implementing a ic_button.xml that asynchronously runs `ToolsInstaller` and displays the
  * result as the preference summary.
  */
 class ToolsInstallerPreference(context: Context, attrs: AttributeSet?) : Preference(context, attrs) {

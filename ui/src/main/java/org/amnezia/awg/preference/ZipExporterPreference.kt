@@ -28,7 +28,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 /**
- * Preference implementing a button that asynchronously exports config zips.
+ * Preference implementing a ic_button.xml that asynchronously exports config zips.
  */
 class ZipExporterPreference(context: Context, attrs: AttributeSet?) : Preference(context, attrs) {
     private var exportedFilePath: String? = null

@@ -4,21 +4,39 @@
  */
 package org.amnezia.awg.activity
 
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
+import android.service.quicksettings.TileService
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.addCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBar
+import androidx.appcompat.widget.AppCompatButton
+import androidx.core.content.PermissionChecker
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import androidx.fragment.app.commit
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.invoke
+import kotlinx.coroutines.launch
+import org.amnezia.awg.Application
+import org.amnezia.awg.QuickTileService
 import org.amnezia.awg.R
+import org.amnezia.awg.backend.BackendException
+import org.amnezia.awg.backend.GoBackend
+import org.amnezia.awg.backend.Tunnel
 import org.amnezia.awg.fragment.TunnelDetailFragment
 import org.amnezia.awg.fragment.TunnelEditorFragment
 import org.amnezia.awg.model.ObservableTunnel
+import org.amnezia.awg.model.TunnelManager
+import org.amnezia.awg.util.ErrorMessages
+import org.amnezia.awg.util.applicationScope
 
 /**
  * CRUD interface for AmneziaWG tunnels. This activity serves as the main entry point to the
@@ -27,41 +45,77 @@ import org.amnezia.awg.model.ObservableTunnel
  */
 class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener {
     private var actionBar: ActionBar? = null
-    private var isTwoPaneLayout = false
-    private var backPressedCallback: OnBackPressedCallback? = null
+    private val permissionActivityResultLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { toggleTunnelWithPermissionsResult() }
+    private var startAfterPermissionCheck: Boolean = false
 
-    private fun handleBackPressed() {
-        val backStackEntries = supportFragmentManager.backStackEntryCount
-        // If the two-pane layout does not have an editor open, going back should exit the app.
-        if (isTwoPaneLayout && backStackEntries <= 1) {
-            finish()
-            return
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (startAfterPermissionCheck && grantResults.all { it == PermissionChecker.PERMISSION_GRANTED }) {
+            // apparently, we need to start the tunnel now, as we've returned from permission check
+            startAfterPermissionCheck = false;
+            // I guess that's now okay.
+            lifecycleScope.launch {
+                Application.getTunnelManager().getTunnels().first()
+                    .setStateAsync(Tunnel.State.TOGGLE)
+            }
         }
+    }
 
-        if (backStackEntries >= 1)
-            supportFragmentManager.popBackStack()
+    private fun toggleTunnelWithPermissionsResult() {
+        val tunnel = Application.getTunnelManager().lastUsedTunnel ?: return
+        lifecycleScope.launch {
+            try {
+                tunnel.setStateAsync(Tunnel.State.TOGGLE)
+            } catch (e: Throwable) {
+                TileService.requestListeningState(this@MainActivity, ComponentName(this@MainActivity, QuickTileService::class.java))
+                val error = ErrorMessages[e]
+                val message = getString(R.string.toggle_error, error)
+            }
+            TileService.requestListeningState(this@MainActivity, ComponentName(this@MainActivity, QuickTileService::class.java))
+        }
+    }
 
-        // Deselect the current tunnel on navigating back from the detail pane to the one-pane list.
-        if (backStackEntries == 1)
-            selectedTunnel = null
+    override fun onSelectedTunnelChanged(
+        oldTunnel: ObservableTunnel?,
+        newTunnel: ObservableTunnel?
+    ): Boolean {
+        return false
     }
 
     override fun onBackStackChanged() {
-        val backStackEntries = supportFragmentManager.backStackEntryCount
-        backPressedCallback?.isEnabled = backStackEntries >= 1
-        if (actionBar == null) return
-        // Do not show the home menu when the two-pane layout is at the detail view (see above).
-        val minBackStackEntries = if (isTwoPaneLayout) 2 else 1
-        actionBar!!.setDisplayHomeAsUpEnabled(backStackEntries >= minBackStackEntries)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.main_activity)
+        setContentView(R.layout.alt_main_activity)
+        val tunnelManager = Application.getTunnelManager()
+        Dispatchers.Main.applicationScope.launch {
+        }
+        findViewById<AppCompatButton>(R.id.vMainToggleButton).setOnClickListener {
+            lifecycleScope.launch {
+                try {
+                    // Call that just to get the lastEdited tunnel into place
+                    Application.getTunnelManager().getTunnels().first().setStateAsync(Tunnel.State.TOGGLE)
+                } catch (e: Throwable) {
+                    // And if that fails, call permission requesting variant
+                    if (Application.getBackend() is GoBackend) {
+                        val intent = GoBackend.VpnService.prepare(this@MainActivity)
+                        if (intent != null) {
+                            permissionActivityResultLauncher.launch(intent)
+                            return@launch
+                        }
+                    }
+                }
+            }
+        }
         actionBar = supportActionBar
-        isTwoPaneLayout = findViewById<View?>(R.id.master_detail_wrapper) != null
         supportFragmentManager.addOnBackStackChangedListener(this)
-        backPressedCallback = onBackPressedDispatcher.addCallback(this) { handleBackPressed() }
+
         onBackStackChanged()
     }
 
@@ -70,60 +124,7 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
         return true
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                // The back arrow in the action bar should act the same as the back button.
-                onBackPressedDispatcher.onBackPressed()
-                true
-            }
-
-            R.id.menu_action_edit -> {
-                supportFragmentManager.commit {
-                    replace(R.id.detail_container, TunnelEditorFragment())
-                    setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-                    addToBackStack(null)
-                }
-                true
-            }
-            // This menu item is handled by the editor fragment.
-            R.id.menu_action_save -> false
-            R.id.menu_settings -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
-                true
-            }
-
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-    override fun onSelectedTunnelChanged(
-        oldTunnel: ObservableTunnel?,
-        newTunnel: ObservableTunnel?
-    ): Boolean {
-        val fragmentManager = supportFragmentManager
-        if (fragmentManager.isStateSaved) {
-            return false
-        }
-
-        val backStackEntries = fragmentManager.backStackEntryCount
-        if (newTunnel == null) {
-            // Clear everything off the back stack (all editors and detail fragments).
-            fragmentManager.popBackStackImmediate(0, FragmentManager.POP_BACK_STACK_INCLUSIVE)
-            return true
-        }
-        if (backStackEntries == 2) {
-            // Pop the editor off the back stack to reveal the detail fragment. Use the immediate
-            // method to avoid the editor picking up the new tunnel while it is still visible.
-            fragmentManager.popBackStackImmediate()
-        } else if (backStackEntries == 0) {
-            // Create and show a new detail fragment.
-            fragmentManager.commit {
-                add(R.id.detail_container, TunnelDetailFragment())
-                setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-                addToBackStack(null)
-            }
-        }
-        return true
+    companion object {
+        const val TAG = "MainActivity"
     }
 }

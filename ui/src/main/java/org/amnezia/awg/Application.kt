@@ -36,10 +36,11 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.amnezia.awg.configStore.SingularConfigStore
 import java.lang.ref.WeakReference
 import java.util.Locale
 
-class Application : android.app.Application() {
+class       Application : android.app.Application() {
     private val futureBackend = CompletableDeferred<Backend>()
     private val coroutineScope = CoroutineScope(Job() + Dispatchers.Main.immediate)
     private var backend: Backend? = null
@@ -48,7 +49,7 @@ class Application : android.app.Application() {
     private lateinit var toolsInstaller: ToolsInstaller
     private lateinit var tunnelManager: TunnelManager
 
-    override fun attachBaseContext(context: Context) {
+        override fun attachBaseContext(context: Context) {
         super.attachBaseContext(context)
         if (BuildConfig.MIN_SDK_VERSION > Build.VERSION.SDK_INT) {
             val intent = Intent(Intent.ACTION_MAIN)
@@ -105,7 +106,7 @@ class Application : android.app.Application() {
         } else {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         }
-        tunnelManager = TunnelManager(FileConfigStore(applicationContext))
+        tunnelManager = TunnelManager(SingularConfigStore(applicationContext))
         tunnelManager.onCreate()
         coroutineScope.launch(Dispatchers.IO) {
             try {
