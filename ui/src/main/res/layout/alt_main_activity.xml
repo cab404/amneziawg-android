@@ -1,15 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    >
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <import type="org.amnezia.awg.backend.Tunnel.State"/>
+        <variable
+            name="tunnel"
+            type="noname.sidestep.model.ObservableTunnel" />
+    </data>
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:text="FUSION ACTIVATE"
-        android:layout_gravity="center"
-        android:id="@+id/vMainToggleButton"
-        />
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        >
 
-</FrameLayout>
+        <androidx.appcompat.widget.AppCompatButton
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:text="@{tunnel.state==State.UP ? @text/stop_tunnel : @text/launch_tunnel}"
+            android:layout_gravity="center"
+            android:backgroundTint="@{tunnel.state==State.UP ? @color/md_main_button_green : @color/md_main_button_red}"
+            android:id="@+id/vMainToggleButton"
+            />
+
+    </FrameLayout>
+</layout>

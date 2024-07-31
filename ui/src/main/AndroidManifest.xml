@@ -35,7 +35,7 @@
         android:protectionLevel="dangerous" />
 
     <application
-        android:name=".Application"
+        android:name="noname.sidestep.Application"
         android:allowBackup="false"
         android:banner="@mipmap/banner"
         android:enableOnBackInvokedCallback="true"
@@ -46,12 +46,12 @@
         android:theme="@style/AppTheme">
 
         <activity
-            android:name=".activity.TunnelToggleActivity"
+            android:name="noname.sidestep.activity.TunnelToggleActivity"
             android:excludeFromRecents="true"
             android:theme="@style/NoBackgroundTheme" />
 
         <activity
-            android:name=".activity.MainActivity"
+            android:name="noname.sidestep.activity.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -76,9 +76,9 @@
 <!--        </activity>-->
 
         <activity
-            android:name=".activity.SettingsActivity"
+            android:name="noname.sidestep.activity.SettingsActivity"
             android:label="@string/settings"
-            android:parentActivityName=".activity.MainActivity" />
+            android:parentActivityName="noname.sidestep.activity.MainActivity" />
 
 <!--        <activity-->
 <!--            android:name=".activity.TunnelCreatorActivity"-->
@@ -91,7 +91,7 @@
 <!--            tools:replace="screenOrientation" />-->
 
         <activity
-            android:name=".activity.LogViewerActivity"
+            android:name="noname.sidestep.activity.LogViewerActivity"
             android:exported="false"
             android:label="@string/log_viewer_title">
             <intent-filter>
@@ -100,7 +100,7 @@
         </activity>
 
         <provider
-            android:name=".activity.LogViewerActivity$ExportedLogContentProvider"
+            android:name="noname.sidestep.activity.LogViewerActivity$ExportedLogContentProvider"
             android:authorities="${applicationId}.exported-log"
             android:exported="false"
             android:grantUriPermissions="true" />

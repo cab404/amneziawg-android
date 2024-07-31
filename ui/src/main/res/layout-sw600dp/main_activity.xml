@@ -4,7 +4,7 @@
     android:id="@+id/main_activity_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activity.MainActivity">
+    tools:context="noname.sidestep.activity.MainActivity">
 
     <LinearLayout
         android:id="@+id/master_detail_wrapper"
@@ -17,7 +17,7 @@
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/list_fragment"
-            android:name="org.amnezia.awg.fragment.TunnelListFragment"
+            android:name="noname.sidestep.fragment.TunnelListFragment"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="2"

@@ -5,11 +5,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context=".activity.MainActivity">
+    tools:context="noname.sidestep.activity.MainActivity">
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/detail_container"
-        android:name="org.amnezia.awg.fragment.TunnelListFragment"
+        android:name="noname.sidestep.fragment.TunnelListFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:tag="LIST" />

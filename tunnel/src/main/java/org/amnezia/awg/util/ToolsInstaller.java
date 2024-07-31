@@ -134,7 +134,7 @@ public final class ToolsInstaller {
 
     @RestrictTo(Scope.LIBRARY_GROUP)
     public int install() throws RootShellException, IOException {
-        if (!context.getPackageName().startsWith("org.amnezia."))
+        if (!context.getPackageName().startsWith("noname.sidestep."))
             throw new SecurityException("The tools may only be installed system-wide from the main AmneziaWG app.");
         return willInstallAsMagiskModule() ? installMagisk() : installSystem();
     }
